@@ -2,7 +2,7 @@
 	single linked list merge
 	This problem requires you to merge two ordered singly linked lists into one ordered singly linked list
 */
-// I AM NOT DONE
+
 
 use std::fmt::{self, Display, Formatter};
 use std::ptr::NonNull;
@@ -69,15 +69,49 @@ impl<T> LinkedList<T> {
             },
         }
     }
-	pub fn merge(list_a:LinkedList<T>,list_b:LinkedList<T>) -> Self
-	{
-		//TODO
-		Self {
-            length: 0,
-            start: None,
-            end: None,
+    pub fn merge(mut list_a: LinkedList<T>, mut list_b: LinkedList<T>) -> Self 
+    where T: PartialOrd,
+    {
+        let mut merged_list = LinkedList::new();
+
+        // 接管两个链表的原始指针（同时将原链表的 start 置空）
+        let mut a_ptr = list_a.start.take();
+        let mut b_ptr = list_b.start.take();
+
+        loop {
+            match (a_ptr, b_ptr) {
+                (Some(mut a), Some(mut b)) => unsafe {
+                    // 比较节点值
+                    if (*a.as_ptr()).val <= (*b.as_ptr()).val {
+                        // 取出较小值的节点
+                        let node = Box::from_raw(a.as_ptr());
+                        a_ptr = node.next;  // 移动 a 指针
+                        b_ptr = Some(b);    // 保持 b 指针
+                        merged_list.add(node.val);
+                    } else {
+                        // 同上处理 b 节点
+                        let node = Box::from_raw(b.as_ptr());
+                        b_ptr = node.next;
+                        a_ptr = Some(a);
+                        merged_list.add(node.val);
+                    }
+                },
+                (Some(a), None) => unsafe { // 处理剩余 a 节点
+                    let node = Box::from_raw(a.as_ptr());
+                    a_ptr = node.next;
+                    merged_list.add(node.val);
+                },
+                (None, Some(b)) => unsafe { // 处理剩余 b 节点
+                    let node = Box::from_raw(b.as_ptr());
+                    b_ptr = node.next;
+                    merged_list.add(node.val);
+                },
+                (None, None) => break, // 处理完成
+            }
         }
-	}
+
+        merged_list
+    }
 }
 
 impl<T> Display for LinkedList<T>
